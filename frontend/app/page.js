@@ -4,61 +4,62 @@ import Image from 'next/image';
 import styles from './page.module.css';
 import bell from '../images/bell.png';
 import illus from '../images/illus.png';
-import { sendNotification, subscribeToNotifications } from '@/app/lib/services/auth'; // Adjust path as needed
 
 const Page = () => {
-  const [subscription, setSubscription] = useState(null);
+  const [showPermissionPopup, setShowPermissionPopup] = useState(false);
+  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
 
   useEffect(() => {
-    const registerServiceWorkerAndSubscribe = async () => {
-  
-
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        try {
-          // Register service worker
-          const registration = await navigator.serviceWorker.register('/sw.js');
-          console.log('Service Worker registered:', registration);
-
-          // Request permission for notifications
-          const permission = await Notification.requestPermission();
-          if (permission !== 'granted') {
-            console.warn('Notification permission denied');
-            return;
-          }
-
-          // Subscribe user to push notifications
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY // Ensure VAPID key is in .env
-          });
-
-          await subscribeToNotifications(subscription);
-          setSubscription(subscription); // Store subscription in state
-          console.log('User subscribed:', subscription);
-        } catch (error) {
-          console.error('Service Worker or subscription failed:', error);
-        }
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        setShowPermissionPopup(true); // Show modal if permission is not granted/denied
+      } else if (Notification.permission === 'granted') {
+        setIsPermissionGranted(true);
       }
-    };
-
-    registerServiceWorkerAndSubscribe();
+    }
   }, []);
 
-  const handleNotification = async () => {
-  
-
-    try {
-      const data = await sendNotification();
-      console.log('Notification sent:', data);
-      alert('Notification sent successfully!');
-    } catch (error) {
-      console.error('Error sending notification:', error);
-      alert('Error sending notification');
+  const requestNotificationPermission = () => {
+    if ('Notification' in window) {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          setIsPermissionGranted(true);
+          alert('Notifications enabled!');
+        } else {
+          alert('You have blocked notifications.');
+        }
+        setShowPermissionPopup(false);
+      });
     }
+  };
+
+  const handleNotification = () => {
+    if (!isPermissionGranted) {
+      alert('Please allow notifications first.');
+      return;
+    }
+
+    new Notification('🔔 Notification', {
+      body: 'Notification sent!',
+      icon: '/bell.png', // Ensure this image exists in your public folder
+    });
   };
 
   return (
     <div className={styles.page}>
+      {/* Custom Allow Notification Popup */}
+      {showPermissionPopup && (
+        <div className={styles.popup}>
+          <div className={styles.popupContent}>
+            <h3>Enable Notifications</h3>
+            <p>Get notified instantly about updates.</p>
+            <button className={styles.allowButton} onClick={requestNotificationPermission}>
+              Allow Notifications
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Heading */}
       <div className={styles.heading}>Hola!</div>
 
@@ -75,7 +76,7 @@ const Page = () => {
       </div>
 
       {/* Button */}
-      <button className={styles.button} onClick={handleNotification}>
+      <button className={styles.button} onClick={handleNotification} disabled={!isPermissionGranted}>
         Send Notification
       </button>
     </div>
