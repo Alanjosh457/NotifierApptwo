@@ -45,10 +45,7 @@ const Page = () => {
   }, []);
 
   const handleNotification = async () => {
-    if (!subscription) {
-      alert('Subscription not ready. Try again in a few seconds.');
-      return;
-    }
+  
 
     try {
       const data = await sendNotification();
