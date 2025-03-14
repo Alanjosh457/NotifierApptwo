@@ -11,7 +11,7 @@ const Page = () => {
 
   useEffect(() => {
     const registerServiceWorkerAndSubscribe = async () => {
-      console.log('Frontend VAPID Key:', process.env.NEXT_PUBLIC_VAPID_KEY); // Debugging
+  
 
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         try {
